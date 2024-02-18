@@ -36,12 +36,13 @@ U can place lambda under Lambda URL invoker.
 
 Here are some security recommendations in order to help protect your function:
 
-- Use AWS IAM roles and policies to control permissions of your Lambda function.
+- Use appropriate IAM policies to control permissions of your Lambda function.
 
-- Limit network access by using security groups and network ACLs.
+- Limit network access by using security groups and network ACLs if decide to connect into vpc
 
 - Use AWS sign v4 mechanism via AWS_IAM lambda url.
 
 - Monitor function invocations with AWS CloudTrail.
   
 Remember, managing the security of your function is a shared responsibility between AWS and you.
+
