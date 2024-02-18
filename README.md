@@ -15,9 +15,10 @@ Finally, the `handler` function handles incoming event requests and extracts the
 ## Usage
 
 1. Deploy this script to AWS Lambda. Ensure it is set to run in a Amazon Linux Runtime. 
-2. The `handler` function should be specified as your Lambda function's handler in the AWS Lambda console.
+2. The `hello` handler function should be specified as your Lambda function's handler in the AWS Lambda console.
 
 Remember to replace `YourLambdaFunctionName` with your own Lambda function name.
+U can place lambda under Lambda URL invoker.
 
 
 ## Notes
@@ -28,6 +29,8 @@ Remember to replace `YourLambdaFunctionName` with your own Lambda function name.
 
 - Be aware of the security implications of this script. It executes arbitrary commands received from an HTTP request. Therefore, make sure appropriate security measures are in place to ensure only trusted users can execute commands.
 
+- Lambda Sandbox might die anytime.
+
 
 ## How to Secure
 
@@ -37,7 +40,7 @@ Here are some security recommendations in order to help protect your function:
 
 - Limit network access by using security groups and network ACLs.
 
-- Enable AWS Shield to protect your application from DDoS attacks.
+- Use AWS sign v4 mechanism via AWS_IAM lambda url.
 
 - Monitor function invocations with AWS CloudTrail.
   
