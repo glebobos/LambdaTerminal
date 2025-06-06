@@ -18,17 +18,23 @@ This project uses AWS Serverless Application Model (SAM) for easier deployment:
 
 1. Make sure you have [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) installed.
 
-2. Prepare the JQ layer and build the project:
+2. Use the unified script for all operations:
+
    ```
-   ./build.sh
+   # To build the project (includes JQ layer preparation)
+   ./lambda-terminal.sh build
+   
+   # To deploy to AWS
+   ./lambda-terminal.sh deploy
+   
+   # To do both in one command
+   ./lambda-terminal.sh all
+   
+   # For more options
+   ./lambda-terminal.sh --help
    ```
 
-3. Deploy to AWS:
-   ```
-   ./build.sh --deploy
-   ```
-
-4. The deployment will create a Lambda Function URL that you can use to access your Lambda Terminal.
+3. The deployment will create a Lambda Function URL that you can use to access your Lambda Terminal.
 
 The JQ utility is included as a Lambda layer, so there's no need to install it separately.
 

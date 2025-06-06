@@ -1,7 +1,7 @@
 # SAM build artifacts
 .aws-sam/
-samconfig.toml
-
+*.log
+*.log.old
 # JQ layer artifacts
 layers/jq/bin/jq
 
