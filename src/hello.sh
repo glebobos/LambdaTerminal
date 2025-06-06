@@ -74,7 +74,10 @@ generateResponses() {
 
 handler() {
     local event=$1
-
+    
+    # Add layer binaries to PATH
+    export PATH=$PATH:/opt/bin
+    
     local ipAddress=$(echo "$event" | jq -r '.headers."x-forwarded-for"')
     local parsedCommand=$(echo "$event" | jq -r '.queryStringParameters.command // ""')
 

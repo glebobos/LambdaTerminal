@@ -12,13 +12,25 @@ Meanwhile, the `generateResponses` function generates a HTML template which pres
 Finally, the `handler` function handles incoming event requests and extracts the IP address and command from the request. The function then executes the mentioned command and generates the HTML response which is further returned as a HTTP response.
 
 
-## Usage
+## Deployment with SAM
 
-1. Deploy this script to AWS Lambda. Ensure it is set to run in a Amazon Linux Runtime. 
-2. The `hello` handler function should be specified as your Lambda function's handler in the AWS Lambda console.
+This project uses AWS Serverless Application Model (SAM) for easier deployment:
 
-Remember to replace `YourLambdaFunctionName` with your own Lambda function name.
-U can place lambda under Lambda URL invoker.
+1. Make sure you have [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html) installed.
+
+2. Prepare the JQ layer and build the project:
+   ```
+   ./build.sh
+   ```
+
+3. Deploy to AWS:
+   ```
+   ./build.sh --deploy
+   ```
+
+4. The deployment will create a Lambda Function URL that you can use to access your Lambda Terminal.
+
+The JQ utility is included as a Lambda layer, so there's no need to install it separately.
 
 
 ## Notes
@@ -30,6 +42,8 @@ U can place lambda under Lambda URL invoker.
 - Be aware of the security implications of this script. It executes arbitrary commands received from an HTTP request. Therefore, make sure appropriate security measures are in place to ensure only trusted users can execute commands.
 
 - Lambda Sandbox might die anytime.
+
+- The project uses a custom runtime (provided.al2) and includes the JQ utility as a Lambda layer for JSON processing.
 
 
 ## How to Secure

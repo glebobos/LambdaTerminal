@@ -1,0 +1,13 @@
+# SAM build artifacts
+.aws-sam/
+samconfig.toml
+
+# JQ layer artifacts
+layers/jq/bin/jq
+
+# Temp files
+/tmp/
+
+# OS specific files
+.DS_Store
+Thumbs.db

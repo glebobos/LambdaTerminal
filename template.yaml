@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'Lambda Terminal - A web-based terminal interface powered by Lambda'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+
+Resources:
+  JqLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: jq-layer
+      Description: Layer containing jq utility
+      ContentUri: layers/jq/
+      CompatibleRuntimes:
+        - provided.al2
+      RetentionPolicy: Retain
+
+  LambdaTerminalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+      Handler: hello.handler
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Layers:
+        - !Ref JqLayer
+      FunctionUrlConfig:
+        AuthType: NONE
+        Cors:
+          AllowOrigins:
+            - '*'
+          AllowMethods:
+            - '*'
+          AllowHeaders:
+            - '*'
+
+Outputs:
+  LambdaTerminalFunction:
+    Description: "Lambda Terminal Function ARN"
+    Value: !GetAtt LambdaTerminalFunction.Arn
+
+  LambdaTerminalUrl:
+    Description: "Lambda Terminal URL"
+    Value: !GetAtt LambdaTerminalFunctionUrl.FunctionUrl
