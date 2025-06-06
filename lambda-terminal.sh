@@ -4,6 +4,7 @@
 # 
 # This script handles all aspects of the Lambda Terminal deployment:
 # - JQ layer preparation
+# - AWS CLI layer preparation
 # - Building with SAM
 # - Deploying to AWS
 # - Testing the environment
@@ -21,6 +22,10 @@ readonly JQ_LAYER_DIR="${LAYERS_DIR}/jq"
 readonly JQ_BIN_DIR="${JQ_LAYER_DIR}/bin"
 readonly JQ_VERSION="1.8.0"
 readonly JQ_DOWNLOAD_URL="https://github.com/jqlang/jq/releases/download/jq-${JQ_VERSION}/jq-linux64"
+readonly AWS_CLI_VERSION="2.0.30"
+readonly AWS_CLI_LAYER_DIR="${LAYERS_DIR}/awscli"
+readonly AWS_CLI_BIN_DIR="${AWS_CLI_LAYER_DIR}/bin"
+readonly AWS_CLI_DOWNLOAD_URL="https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip"
 readonly LOG_FILE="${SCRIPT_DIR}/lambda-terminal-deploy.log"
 
 # ===== UTILITY FUNCTIONS =====
@@ -121,6 +126,93 @@ test_jq() {
         log_error "JQ test failed: $test_result"
         return 1
     fi
+}
+
+prepare_awscli_layer() {
+    log_info "Preparing AWS CLI layer..."
+    
+    # Create directories
+    mkdir -p "${AWS_CLI_LAYER_DIR}/bin"
+    
+    # Check if we need to install AWS CLI
+    if [[ ! -f "${AWS_CLI_BIN_DIR}/aws" || "$1" == "--force" ]]; then
+        log_info "Installing AWS CLI..."
+        
+        # Create temp directory for AWS CLI installation
+        local tmp_dir=$(mktemp -d)
+        log_info "Created temporary directory: ${tmp_dir}"
+        
+        # Download AWS CLI
+        log_info "Downloading AWS CLI..."
+        if ! curl -L "${AWS_CLI_DOWNLOAD_URL}" -o "${tmp_dir}/awscliv2.zip"; then
+            log_error "Failed to download AWS CLI"
+            rm -rf "${tmp_dir}"
+            return 1
+        fi
+        
+        # Unzip AWS CLI
+        log_info "Extracting AWS CLI..."
+        if ! unzip -q "${tmp_dir}/awscliv2.zip" -d "${tmp_dir}"; then
+            log_error "Failed to extract AWS CLI"
+            rm -rf "${tmp_dir}"
+            return 1
+        fi
+        
+        # Install AWS CLI to layer directory
+        log_info "Installing AWS CLI to layer..."
+        if ! "${tmp_dir}/aws/install" --bin-dir "${tmp_dir}/origin" --install-dir "${tmp_dir}/origin" --update; then
+            log_error "Failed to install AWS CLI"
+            rm -rf "${tmp_dir}"
+            return 1
+        fi
+        #Copy dist from origin into bin
+        log_info "Copying AWS CLI to layer bin directory..."
+        cp -r "${tmp_dir}/origin/v2/${AWS_CLI_VERSION}/dist"/* "${AWS_CLI_BIN_DIR}/"
+    
+        
+        # Cleanup
+        log_info "Cleaning up temporary files..."
+        rm -rf "${tmp_dir}"
+        
+        log_success "AWS CLI installation completed"
+    else
+        log_info "AWS CLI already installed, skipping installation"
+    fi
+    
+    # Verify AWS CLI wrapper script is executable
+    if [[ -f "${AWS_CLI_BIN_DIR}/aws" ]]; then
+        chmod +x "${AWS_CLI_BIN_DIR}/aws"
+        log_success "AWS CLI layer prepared successfully!"
+        return 0
+    else
+        log_error "AWS CLI wrapper script verification failed"
+        return 1
+    fi
+}
+
+test_awscli() {
+    log_info "Testing AWS CLI installation..."
+    
+    if [[ ! -f "${AWS_CLI_BIN_DIR}/aws" ]]; then
+        log_error "AWS CLI wrapper script not found"
+        return 1
+    fi
+    
+    # Check if the wrapper script is executable
+    if [[ ! -x "${AWS_CLI_BIN_DIR}/aws" ]]; then
+        log_error "AWS CLI wrapper script is not executable"
+        return 1
+    fi
+    
+    # Check if the AWS CLI executable is present in the installation directory
+    if [[ ! -d "${AWS_CLI_LAYER_DIR}" ]]; then
+        log_error "AWS CLI installation directory not found"
+        return 1
+    fi
+    
+    log_info "AWS CLI appears to be properly installed"
+    log_success "AWS CLI test completed successfully"
+    return 0
 }
 
 build_with_sam() {
@@ -227,15 +319,16 @@ Lambda Terminal management script for AWS Lambda deployment.
 
 OPTIONS:
   -h, --help        Show this help message and exit
-  -f, --force       Force update of JQ layer
+  -f, --force       Force update of layers
   -v, --verbose     Enable verbose output
 
 COMMANDS:
-  prepare-layer     Prepare the JQ layer only
+  prepare-layer     Prepare the JQ and AWS CLI layers
   build             Build the Lambda Terminal with SAM
   deploy            Deploy to AWS using SAM
   destroy           Destroy deployed AWS resources
   test-jq           Test JQ installation
+  test-awscli       Test AWS CLI installation
   all               Run all steps (prepare, build, deploy)
 
 If no COMMAND is provided, 'build' is assumed.
@@ -247,11 +340,11 @@ SAM_OPTIONS:
 
 Examples:
   $0 -h                  # Show help information
-  $0 prepare-layer       # Prepare the JQ layer only
-  $0 all -f              # Force update of JQ layer, then build and deploy
+  $0 prepare-layer       # Prepare the JQ and AWS CLI layers
+  $0 all -f              # Force update of JQ and AWS CLI layers, then build and deploy
   $0 -v build            # Build with verbose logging
   $0 deploy --guided     # Deploy with guided setup (passed to SAM)
-  $0 -f deploy --stack-name my-stack    # Force update JQ and deploy with custom stack name
+  $0 -f deploy --stack-name my-stack    # Force update layers and deploy with custom stack name
   $0 destroy                # Destroy all deployed resources
   $0 destroy --no-prompts   # Destroy all resources without confirmation
 EOF
@@ -287,7 +380,7 @@ main() {
                 verbose=true
                 shift
                 ;;
-            prepare-layer|build|deploy|destroy|test-jq|all)
+            prepare-layer|build|deploy|destroy|test-jq|test-awscli|all)
                 # If we already have a command, add this as a SAM arg instead
                 if [[ -n "$command" ]]; then
                     sam_args+=("$1")
@@ -323,10 +416,12 @@ main() {
     # Execute requested command
     case "$command" in
         prepare-layer)
-            prepare_jq_layer $([[ "$force_update" == true ]] && echo "--force")
+            prepare_jq_layer $([[ "$force_update" == true ]] && echo "--force") && \
+            prepare_awscli_layer $([[ "$force_update" == true ]] && echo "--force")
             ;;
         build)
             prepare_jq_layer $([[ "$force_update" == true ]] && echo "--force") && \
+            prepare_awscli_layer $([[ "$force_update" == true ]] && echo "--force") && \
             build_with_sam
             ;;
         deploy)
@@ -340,9 +435,14 @@ main() {
         test-jq)
             test_jq
             ;;
+        test-awscli)
+            test_awscli
+            ;;
         all)
             prepare_jq_layer $([[ "$force_update" == true ]] && echo "--force") && \
+            prepare_awscli_layer $([[ "$force_update" == true ]] && echo "--force") && \
             test_jq && \
+            test_awscli && \
             build_with_sam && \
             deploy_with_sam "${sam_args[@]}"
             ;;

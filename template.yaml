@@ -18,6 +18,16 @@ Resources:
         - provided.al2
       RetentionPolicy: Retain
 
+  AwsCliLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: awscli-layer
+      Description: Layer containing AWS CLI utility
+      ContentUri: layers/awscli/
+      CompatibleRuntimes:
+        - provided.al2
+      RetentionPolicy: Retain
+
   LambdaTerminalFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -28,6 +38,7 @@ Resources:
         - x86_64
       Layers:
         - !Ref JqLayer
+        - !Ref AwsCliLayer
       FunctionUrlConfig:
         AuthType: NONE
         Cors:

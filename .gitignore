@@ -1,5 +1,6 @@
 # SAM build artifacts
 .aws-sam/
+layers/
 *.log
 *.log.old
 # JQ layer artifacts

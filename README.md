@@ -2,6 +2,13 @@
 
 This code allows you to execute custom commands via AWS Lambda. It runs the command and logs the output to a temporary file. The logs can then be viewed in a browser-based terminal interface.
 
+## Included Layers
+
+This project includes the following Lambda layers:
+
+1. **JQ Layer** - Provides the JQ utility for JSON processing
+2. **AWS CLI Layer** - Provides the AWS CLI for executing AWS commands directly from the terminal interface
+
 
 ## How does it work?
 
