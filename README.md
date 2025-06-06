@@ -47,6 +47,7 @@ This project uses AWS Serverless Application Model (SAM) for easier deployment:
 3. The deployment will create a Lambda Function URL that you can use to access your Lambda Terminal.
 
 The JQ utility is included as a Lambda layer, so there's no need to install it separately.
+The AWS CLI utility is included as well.
 
 
 ## Notes
