@@ -72,7 +72,7 @@ generateResponses() {
     } >>/tmp/template.html
 }
 
-handler() {
+world() {
     local event=$1
     
     # Add layer binaries to PATH

@@ -22,7 +22,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ./src
-      Handler: hello.handler
+      Handler: hello.world
       Runtime: provided.al2
       Architectures:
         - x86_64

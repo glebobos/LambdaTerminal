@@ -27,7 +27,10 @@ This project uses AWS Serverless Application Model (SAM) for easier deployment:
    # To deploy to AWS
    ./lambda-terminal.sh deploy
    
-   # To do both in one command
+   # To destroy the deployed resources
+   ./lambda-terminal.sh destroy
+   
+   # To do both build and deploy in one command
    ./lambda-terminal.sh all
    
    # For more options

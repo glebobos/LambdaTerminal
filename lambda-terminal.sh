@@ -168,6 +168,57 @@ deploy_with_sam() {
     fi
 }
 
+destroy_with_sam() {
+    log_info "Destroying Lambda Terminal resources..."
+    
+    if ! check_command "sam" "Please install AWS SAM CLI: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html"; then
+        return 1
+    fi
+    
+    # Check AWS credentials before destroying
+    if ! check_aws_credentials; then
+        return 1
+    fi
+    
+    # Get stack name from config or use default
+    local stack_name=$(grep stack_name "${SCRIPT_DIR}/samconfig.toml" | cut -d '"' -f 2 || echo "test-terminal")
+    
+    log_info "Preparing to delete stack: $stack_name"
+    
+    # Confirm destruction unless --no-prompts is specified
+    local no_prompts=false
+    for arg in "$@"; do
+        if [[ "$arg" == "--no-prompts" ]]; then
+            no_prompts=true
+            break
+        fi
+    done
+    
+    if [[ "$no_prompts" == false ]]; then
+        read -p "Are you sure you want to destroy all Lambda Terminal resources? (y/N) " confirm
+        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+            log_info "Destruction cancelled by user"
+            return 0
+        fi
+    fi
+    
+    # Filter out our custom --no-prompts flag
+    local sam_args=()
+    for arg in "$@"; do
+        if [[ "$arg" != "--no-prompts" ]]; then
+            sam_args+=("$arg")
+        fi
+    done
+    
+    if sam delete --stack-name "$stack_name" "${sam_args[@]}"; then
+        log_success "Stack deletion completed successfully"
+        return 0
+    else
+        log_error "Stack deletion failed"
+        return 1
+    fi
+}
+
 show_help() {
     cat << EOF
 Usage: $0 [OPTIONS] [COMMAND] [SAM_OPTIONS]
@@ -183,6 +234,7 @@ COMMANDS:
   prepare-layer     Prepare the JQ layer only
   build             Build the Lambda Terminal with SAM
   deploy            Deploy to AWS using SAM
+  destroy           Destroy deployed AWS resources
   test-jq           Test JQ installation
   all               Run all steps (prepare, build, deploy)
 
@@ -200,6 +252,8 @@ Examples:
   $0 -v build            # Build with verbose logging
   $0 deploy --guided     # Deploy with guided setup (passed to SAM)
   $0 -f deploy --stack-name my-stack    # Force update JQ and deploy with custom stack name
+  $0 destroy                # Destroy all deployed resources
+  $0 destroy --no-prompts   # Destroy all resources without confirmation
 EOF
 }
 
@@ -233,7 +287,7 @@ main() {
                 verbose=true
                 shift
                 ;;
-            prepare-layer|build|deploy|test-jq|all)
+            prepare-layer|build|deploy|destroy|test-jq|all)
                 # If we already have a command, add this as a SAM arg instead
                 if [[ -n "$command" ]]; then
                     sam_args+=("$1")
@@ -278,6 +332,10 @@ main() {
         deploy)
             check_aws_credentials && \
             deploy_with_sam "${sam_args[@]}"
+            ;;
+        destroy)
+            check_aws_credentials && \
+            destroy_with_sam "${sam_args[@]}"
             ;;
         test-jq)
             test_jq
